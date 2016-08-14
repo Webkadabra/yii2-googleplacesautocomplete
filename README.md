@@ -14,7 +14,7 @@ Add below to your `composer.json` file
         }
     ],
     "requires": {
-        "webkadabra/yii2-googleplacesautocomplete": "*"
+        "petrabarus/yii2-googleplacesautocomplete": "*"
     }
 ```
 
