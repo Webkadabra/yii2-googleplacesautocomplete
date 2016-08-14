@@ -10,11 +10,11 @@ Add below to your `composer.json` file
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/petrabarus/yii2-googleplacesautocomplete"
+            "url": "https://github.com/webkadabra/yii2-googleplacesautocomplete"
         }
     ],
     "requires": {
-        "petrabarus/yii2-googleplacesautocomplete": "*"
+        "webkadabra/yii2-googleplacesautocomplete": "*"
     }
 ```
 
