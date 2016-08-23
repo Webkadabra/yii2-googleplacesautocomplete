@@ -10,6 +10,11 @@ use yii\helpers\Html;
 class GooglePlacesAutoComplete extends InputWidget
 {
     const API_URL = '//maps.googleapis.com/maps/api/js?';
+
+    /** 
+     * @var bool - if true, a widget will behave in a way to try and ensure user did select an option before submission
+     */
+    public $tryEnsure = false;
     public $libraries = 'places';
     public $sensor = true;
     public $language = 'en-US';
@@ -55,7 +60,65 @@ class GooglePlacesAutoComplete extends InputWidget
                 'language'  => $this->language,
                 'key'       => $key,
             ]));
-        $view->registerJs(<<<JS
+
+        if ($this->tryEnsure) {
+            $view->registerJs(<<<JS
+/**
+* @link http://stackoverflow.com/questions/7865446/google-maps-places-api-v3-autocomplete-select-first-option-on-enter
+* @param input
+*/
+function pacSelectFirst(input) {
+    // store the original event binding function
+    var _addEventListener = (input.addEventListener) ? input.addEventListener : input.attachEvent;
+    function addEventListenerWrapper(type, listener) {
+        // Simulate a 'down arrow' keypress on hitting 'return' when no pac suggestion is selected,
+        // and then trigger the original listener.
+        if (type == "keydown") {
+            var orig_listener = listener;
+            listener = function(event) {
+                 if (event.which == 13) {
+                var suggestion_selected = $(".pac-item-selected").length > 0;
+                var is_pac_open = $(".pac-item:visible").length > 0;
+                 if (!suggestion_selected && is_pac_open) {
+                    var simulated_downarrow = $.Event("keydown", {
+                        keyCode: 40,
+                        which: 40
+                    });
+                  setTimeout(function(){
+                  orig_listener.apply(input, [simulated_downarrow]);
+                    orig_listener.apply(input, [event]);
+                  },100);
+                 }
+                 if (is_pac_open) {
+                  event.preventDefault();
+                  setTimeout(function(){
+                    orig_listener.apply(input, [event]);
+                  },100);
+                 }
+                } else {
+                  orig_listener.apply(input, [event]);
+                }
+            };
+        }
+        _addEventListener.apply(input, [type, listener]);
+    }
+
+    var options = {$scriptOptions};
+
+    input.addEventListener = addEventListenerWrapper;
+    input.attachEvent = addEventListenerWrapper;
+
+    var {$id}autocomplete = new google.maps.places.Autocomplete(input, options);
+    {$listeners}
+}
+(function(){
+    var input = document.getElementById('{$elementId}');
+    pacSelectFirst(input);
+})();
+JS
+                , \yii\web\View::POS_READY);
+        } else {
+            $view->registerJs(<<<JS
 (function(){
     var input = document.getElementById('{$elementId}');
     var options = {$scriptOptions};
@@ -63,6 +126,8 @@ class GooglePlacesAutoComplete extends InputWidget
     {$listeners}
 })();
 JS
-            , \yii\web\View::POS_READY);
+                , \yii\web\View::POS_READY);
+        }
+
     }
 }
